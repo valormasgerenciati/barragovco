@@ -6,8 +6,8 @@
  * Version:           1.0.0
  * Requires at least: 5.6
  * Requires PHP:      7.2
- * Author:            GOV.CO
- * Author URI:        https://www.gov.co/
+ * Author:            Valor Mas S.A.S
+ * Author URI:        https://valormas.gov.co/
  * License:           GPL-2.0-or-later
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:       barra-govco
@@ -31,7 +31,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * -----------------------------------------------------------------------------
  */
 if ( ! defined( 'BARRA_GOVCO_VERSION' ) ) {
-    define( 'BARRA_GOVCO_VERSION', '1.0.0' );
+    define( 'BARRA_GOVCO_VERSION', '1.0.1' );
 }
 if ( ! defined( 'BARRA_GOVCO_PLUGIN_FILE' ) ) {
     define( 'BARRA_GOVCO_PLUGIN_FILE', __FILE__ );
@@ -100,7 +100,7 @@ function bgc_render_top_bar() {
     <!-- Barra Superior GOV.CO - Lineamientos Oficiales Kit UI 9.2 -->
     <div id="govco-header-topbar" style="background-color: #0943B5 !important; height: 56px !important; width: 100% !important; display: flex !important; align-items: center !important; padding: 0 16px !important; box-sizing: border-box !important; z-index: 99999 !important; position: relative !important; margin: 0 !important; border: none !important; float: none !important;">
         <div style="max-width: 1200px !important; width: 100% !important; margin: 0 auto !important; display: flex !important; align-items: center !important; justify-content: flex-start !important; height: 100% !important; border: none !important; padding: 0 !important;">
-            <a href="https://www.gov.co/home/"
+            <a href="https://www.gov.co/"
                target="_blank"
                rel="noopener noreferrer"
                style="display: flex !important; align-items: center !important; min-width: 44px !important; min-height: 44px !important; justify-content: center !important; text-decoration: none !important; border: none !important; padding: 0 !important; margin: 0 !important; background: none !important; box-shadow: none !important;"
@@ -133,7 +133,7 @@ function bgc_render_bottom_bar() {
     <div id="govco-final-bar" style="width: 100% !important; background-color: #0943B5 !important; padding: 12px 0 !important; box-sizing: border-box !important; display: flex !important; align-items: center !important; margin: 0em !important; border: none !important; clear: both !important; float: none !important;">
         <div style="max-width: 1200px !important; width: 100% !important; margin: 0 auto !important; padding: 0 24px !important; display: flex !important; align-items: center !important; justify-content: flex-start !important; box-sizing: border-box !important; gap: 0px !important;">
 
-            <a href="https://www.gov.co/home/" target="_blank" rel="noopener noreferrer" style="display: flex !important; align-items: center !important; justify-content: center !important; text-decoration: none !important; padding: 0em !important; margin: 0em !important; background: none !important; box-shadow: none !important;" aria-label="Portal Único del Estado Colombiano - GOV.CO">
+            <a href="https://www.gov.co/" target="_blank" rel="noopener noreferrer" style="display: flex !important; align-items: center !important; justify-content: center !important; text-decoration: none !important; padding: 0em !important; margin: 0em !important; background: none !important; box-shadow: none !important;" aria-label="Portal Único del Estado Colombiano - GOV.CO">
                 <img src="<?php echo esc_url( $logo_govco_url ); ?>"
                      alt="Logo GOV.CO"
                      style="height: 24px !important; width: auto !important; display: block !important; border: none !important; margin: 0em !important; padding: 0em !important; box-shadow: none !important; object-fit: contain !important;">
