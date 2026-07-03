@@ -3,7 +3,7 @@
  * Plugin Name:       Barra GOV.CO
  * Plugin URI:        https://www.gov.co/
  * Description:       Integra la barra superior y la barra azul inferior oficiales de GOV.CO (Kit UI 9.2) en cualquier sitio WordPress, cumpliendo con los lineamientos de identidad visual del Estado Colombiano.
- * Version:           1.0.0
+ * Version:           1.0.1
  * Requires at least: 5.6
  * Requires PHP:      7.2
  * Author:            Valor Mas S.A.S
