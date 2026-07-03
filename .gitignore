@@ -1,0 +1,26 @@
+# Archivos del sistema operativo
+.DS_Store
+Thumbs.db
+desktop.ini
+ehthumbs.db
+ehthumbs_vista.db
+
+# Archivos de editores / IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Backups y archivos temporales de WordPress
+*.bak
+*.tmp
+*.zip
+*.tar.gz
+
+# Logs
+*.log
+
+# Archivos específicos del plugin (si los hubiera)
+node_modules/
+vendor/
