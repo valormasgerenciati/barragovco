@@ -3,7 +3,7 @@
  * Plugin Name:       Barra GOV.CO
  * Plugin URI:        https://www.gov.co/
  * Description:       Integra la barra superior y la barra azul inferior oficiales de GOV.CO (Kit UI 9.2) en cualquier sitio WordPress, cumpliendo con los lineamientos de identidad visual del Estado Colombiano.
- * Version:           1.0.2
+ * Version:           1.0.3
  * Requires at least: 5.6
  * Requires PHP:      7.2
  * Author:            Valor Mas S.A.S
@@ -31,7 +31,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * -----------------------------------------------------------------------------
  */
 if ( ! defined( 'BARRA_GOVCO_VERSION' ) ) {
-    define( 'BARRA_GOVCO_VERSION', '1.0.2' );
+    define( 'BARRA_GOVCO_VERSION', '1.0.3' );
 }
 if ( ! defined( 'BARRA_GOVCO_PLUGIN_FILE' ) ) {
     define( 'BARRA_GOVCO_PLUGIN_FILE', __FILE__ );
@@ -74,34 +74,26 @@ add_action( 'wp_enqueue_scripts', 'bgc_enqueue_assets' );
 /**
  * Devuelve el HTML de la barra superior de GOV.CO como cadena.
  *
- * Se usa tanto para imprimirla vía wp_body_open como para inyectarla
- * mediante output buffering en temas que no soportan ese hook
- * (p. ej. BeTheme, Muffin Builder y otros themes con builders).
+ * Construido por concatenación para evitar ob_start anidados (que pueden
+ * provocar WSOD en combinación con el callback de buffer principal).
  *
  * @since 1.0.2
+ * @since 1.0.3 Refactor: concatenación en lugar de ob_start anidado.
  * @return string
  */
 function bgc_get_top_bar_html() {
-    $logo_url = BARRA_GOVCO_PLUGIN_URL . 'logos/logoGovCO.png';
+    $logo_url = esc_url( BARRA_GOVCO_PLUGIN_URL . 'logos/logoGovCO.png' );
 
-    ob_start();
-    ?>
-    <!-- Barra Superior GOV.CO - Lineamientos Oficiales Kit UI 9.2 -->
-    <div id="govco-header-topbar" style="background-color: #0943B5 !important; height: 56px !important; width: 100% !important; display: flex !important; align-items: center !important; padding: 0 16px !important; box-sizing: border-box !important; z-index: 99999 !important; position: relative !important; margin: 0 !important; border: none !important; float: none !important;">
-        <div style="max-width: 1200px !important; width: 100% !important; margin: 0 auto !important; display: flex !important; align-items: center !important; justify-content: flex-start !important; height: 100% !important; border: none !important; padding: 0 !important;">
-            <a href="https://www.gov.co/"
-               target="_blank"
-               rel="noopener noreferrer"
-               style="display: flex !important; align-items: center !important; min-width: 44px !important; min-height: 44px !important; justify-content: center !important; text-decoration: none !important; border: none !important; padding: 0 !important; margin: 0 !important; background: none !important; box-shadow: none !important;"
-               aria-label="Portal Único del Estado Colombiano - GOV.CO">
-                <img src="<?php echo esc_url( $logo_url ); ?>"
-                     alt="Logo GOV.CO"
-                     style="width: 136px !important; height: 24px !important; max-width: 136px !important; max-height: 24px !important; min-width: 136px !important; min-height: 24px !important; display: block !important; border: none !important; padding: 0 !important; margin: 0 !important; box-shadow: none !important; object-fit: contain !important; aspect-ratio: 136 / 24 !important;">
-            </a>
-        </div>
-    </div>
-    <?php
-    return (string) ob_get_clean();
+    $html  = '<!-- Barra Superior GOV.CO - Lineamientos Oficiales Kit UI 9.2 -->';
+    $html .= '<div id="govco-header-topbar" style="background-color: #0943B5 !important; height: 56px !important; width: 100% !important; display: flex !important; align-items: center !important; padding: 0 16px !important; box-sizing: border-box !important; z-index: 99999 !important; position: relative !important; margin: 0 !important; border: none !important; float: none !important;">';
+    $html .= '<div style="max-width: 1200px !important; width: 100% !important; margin: 0 auto !important; display: flex !important; align-items: center !important; justify-content: flex-start !important; height: 100% !important; border: none !important; padding: 0 !important;">';
+    $html .= '<a href="https://www.gov.co/" target="_blank" rel="noopener noreferrer" style="display: flex !important; align-items: center !important; min-width: 44px !important; min-height: 44px !important; justify-content: center !important; text-decoration: none !important; border: none !important; padding: 0 !important; margin: 0 !important; background: none !important; box-shadow: none !important;" aria-label="Portal Único del Estado Colombiano - GOV.CO">';
+    $html .= '<img src="' . $logo_url . '" alt="Logo GOV.CO" style="width: 136px !important; height: 24px !important; max-width: 136px !important; max-height: 24px !important; min-width: 136px !important; min-height: 24px !important; display: block !important; border: none !important; padding: 0 !important; margin: 0 !important; box-shadow: none !important; object-fit: contain !important; aspect-ratio: 136 / 24 !important;">';
+    $html .= '</a>';
+    $html .= '</div>';
+    $html .= '</div>';
+
+    return $html;
 }
 
 /**
@@ -115,44 +107,54 @@ function bgc_render_top_bar() {
     // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
     echo bgc_get_top_bar_html();
 }
-add_action( 'wp_body_open', 'bgc_render_top_bar', 1 );
 
 /**
  * Inyecta la barra superior justo después de <body> mediante output buffering.
  *
- * Esta vía cubre temas que NO llaman wp_body_open() (BeTheme, builders
- * personalizados, etc.) y evita el bug histórico que situaba la barra
- * superior en el pie del documento, junto a la barra azul inferior.
- *
- * Si la barra ya fue impresa por wp_body_open(), se detecta por el
- * atributo id y se omite para no duplicarla.
+ * Cubre temas que NO llaman wp_body_open() (BeTheme, builders, etc.).
+ * Es tolerante a fallos: cualquier error devuelve el buffer original,
+ * nunca una cadena vacía (evita WSOD).
  *
  * @since 1.0.2
- * @param string $buffer HTML completo de la página capturado por ob_start.
- * @return string HTML con la barra superior inyectada (si corresponde).
+ * @since 1.0.3 Blindado contra retornos null/false y buffers no-string.
+ * @param mixed $buffer HTML capturado por ob_start.
+ * @return string HTML (modificado o intacto).
  */
 function bgc_inject_top_bar_into_body( $buffer ) {
-    if ( empty( $buffer ) || false === strpos( $buffer, '<body' ) ) {
+    if ( ! is_string( $buffer ) || '' === $buffer ) {
         return $buffer;
     }
     // Si wp_body_open() ya inyectó la barra, no duplicar.
     if ( false !== strpos( $buffer, 'id="govco-header-topbar"' ) ) {
         return $buffer;
     }
-    return preg_replace(
-        '/(<body[^>]*>)/i',
-        '$1' . bgc_get_top_bar_html(),
-        $buffer,
-        1
-    );
+    // Solo actuar si vemos una etiqueta <body ...>.
+    if ( false === strpos( $buffer, '<body' ) ) {
+        return $buffer;
+    }
+
+    $top_bar = bgc_get_top_bar_html();
+    $result  = preg_replace( '/(<body\b[^>]*>)/i', '$1' . $top_bar, $buffer, 1 );
+
+    // preg_replace devuelve null ante error en PHP 8+. En ese caso, devolvemos
+    // el buffer intacto en vez de propagar el null (que podría blankear la página).
+    if ( null === $result ) {
+        return $buffer;
+    }
+
+    return $result;
 }
 
 /**
  * Activa el buffer de salida en el front-end para inyectar la barra superior.
  *
- * Se excluyen admin, AJAX, REST y feeds para no afectar otras respuestas.
+ * Solo se inicia si:
+ *  - No es admin / AJAX / cron / REST / WP-CLI.
+ *  - No se han enviado headers todavía.
+ *  - No hay ya un buffer activo de otro plugin/tema (evita anidamientos frágiles).
  *
  * @since 1.0.2
+ * @since 1.0.3 Añadidos guards headers_sent() y ob_get_level().
  * @return void
  */
 function bgc_start_output_buffer() {
@@ -165,11 +167,26 @@ function bgc_start_output_buffer() {
     if ( defined( 'DOING_CRON' ) && DOING_CRON ) {
         return;
     }
-    if ( ( defined( 'REST_REQUEST' ) && REST_REQUEST ) || ( defined( 'WP_CLI' ) && WP_CLI ) ) {
+    if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
         return;
     }
+    if ( defined( 'WP_CLI' ) && WP_CLI ) {
+        return;
+    }
+    if ( headers_sent() ) {
+        return;
+    }
+    // Si ya hay un buffer activo (p. ej. de un plugin de caché), no añadimos
+    // otro para evitar problemas de anidamiento. La barra aún se inyectará
+    // vía wp_body_open() cuando el tema lo soporte.
+    if ( ob_get_level() > 0 ) {
+        return;
+    }
+
     ob_start( 'bgc_inject_top_bar_into_body' );
 }
+
+add_action( 'wp_body_open', 'bgc_render_top_bar', 1 );
 add_action( 'template_redirect', 'bgc_start_output_buffer' );
 
 

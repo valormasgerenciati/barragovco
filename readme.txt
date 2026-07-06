@@ -4,7 +4,7 @@ Tags: gov.co, colombia, government, branding, accessibility
 Requires at least: 5.6
 Tested up to: 6.5
 Requires PHP: 7.2
-Stable tag: 1.0.2
+Stable tag: 1.0.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -57,6 +57,12 @@ Los estilos y scripts se cargan desde el CDN oficial `cdn.www.gov.co`. Los logot
 
 == Changelog ==
 
+= 1.0.3 =
+* Corrección crítica (WSOD): se elimina el `ob_start` anidado dentro del callback de buffer, que podía provocar pantalla en blanco al combinarse con plugins de caché u otros buffers activos.
+* `bgc_get_top_bar_html()` ahora construye el HTML por concatenación de cadenas (sin `ob_start`/`ob_get_clean` internos).
+* `bgc_inject_top_bar_into_body()` blindado contra retornos `null` de `preg_replace` (PHP 8+) y contra buffers no-string.
+* `bgc_start_output_buffer()` añade guards `headers_sent()` y `ob_get_level() > 0` para no activar el buffer cuando hay otro activo o ya se enviaron headers.
+
 = 1.0.2 =
 * Corrección: la barra superior ya no se renderiza al pie del documento en temas que no implementan `wp_body_open()` (BeTheme, Muffin Builder, themes con builders personalizados). Se sustituye el fallback basado en `wp_footer` por inyección vía `output buffering` en `template_redirect`, con detección de duplicados.
 * Refactor: se extrae `bgc_get_top_bar_html()` para reutilizar el marcado entre `wp_body_open` y el buffer.
@@ -70,5 +76,5 @@ Los estilos y scripts se cargan desde el CDN oficial `cdn.www.gov.co`. Los logot
 
 == Upgrade Notice ==
 
-= 1.0.2 =
-Corrige el bug que situaba la barra superior en la parte inferior de la página en temas como BeTheme. Recomendado para todos los sitios con builders que no usan `wp_body_open()`.
+= 1.0.3 =
+Corrección de pantalla en blanco (WSOD) que podía ocurrir en 1.0.2 al combinarse con plugins de caché u otros buffers activos. Actualización obligatoria desde 1.0.2.
