@@ -4,7 +4,7 @@ Tags: gov.co, colombia, government, branding, accessibility
 Requires at least: 5.6
 Tested up to: 6.5
 Requires PHP: 7.2
-Stable tag: 1.0.6
+Stable tag: 1.0.7
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -56,6 +56,14 @@ El plugin incluye un fallback que registra la barra superior también en `wp_foo
 Los estilos y scripts se cargan desde el CDN oficial `cdn.www.gov.co`. Los logotipos se sirven localmente desde el propio plugin.
 
 == Changelog ==
+
+= 1.0.7 =
+* Comportamiento "auto-hide" de la barra superior: ahora se oculta al hacer scroll hacia abajo y reaparece al hacer scroll hacia arriba. Esto libera todo el alto del viewport para leer el contenido y se alinea con el patrón habitual de barras gubernamentales inteligentes.
+* Implementación eficiente: listener de `scroll` con `{ passive: true }` y `requestAnimationFrame` para no afectar el rendimiento del scroll (incluso en móviles), con umbral de 8 px para evitar parpadeos por micro-movimientos del trackpad.
+* La transición usa `transform: translateY(-100%)` con CSS `transition: transform 250ms ease-in-out`, así el movimiento es suave y no produce reflow.
+* Cuando la barra se oculta, el `padding-top` del `<body>` y el `scroll-padding-top` del `<html>` vuelven a 0 para no dejar un hueco blanco arriba del contenido.
+* Los headers/menus sticky del tema (configurados en 1.0.6) ahora también se re-ajustan dinámicamente: `top: 56px` cuando la barra GOV.CO está visible y `top: 0` cuando se oculta, para que el header del tema ocupe su lugar de forma natural.
+* En el top de la página (`pageYOffset <= 56`), la barra siempre se vuelve visible para garantizar que se ve desde el primer momento.
 
 = 1.0.6 =
 * Compatibilidad con headers sticky/fixed del tema: el fallback JavaScript ahora detecta elementos con `position: fixed` o `position: sticky` (selectores comunes: `header`, `.site-header`, `.elementor-sticky`, `.mfn-header-tmpl`, `[class*="sticky"]`, etc.) y les aplica `top: 56px` con `!important`. Así, la barra GOV.CO queda fija arriba del viewport y el header sticky del tema se "engancha" justo debajo de ella, sin superponerse.

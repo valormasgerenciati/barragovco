@@ -3,7 +3,7 @@
  * Plugin Name:       Barra GOV.CO
  * Plugin URI:        https://www.gov.co/
  * Description:       Integra la barra superior y la barra azul inferior oficiales de GOV.CO (Kit UI 9.2) en cualquier sitio WordPress, cumpliendo con los lineamientos de identidad visual del Estado Colombiano.
- * Version:           1.0.6
+ * Version:           1.0.7
  * Requires at least: 5.6
  * Requires PHP:      7.2
  * Author:            Valor Mas S.A.S
@@ -31,7 +31,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * -----------------------------------------------------------------------------
  */
 if ( ! defined( 'BARRA_GOVCO_VERSION' ) ) {
-    define( 'BARRA_GOVCO_VERSION', '1.0.6' );
+    define( 'BARRA_GOVCO_VERSION', '1.0.7' );
 }
 if ( ! defined( 'BARRA_GOVCO_PLUGIN_FILE' ) ) {
     define( 'BARRA_GOVCO_PLUGIN_FILE', __FILE__ );
@@ -203,6 +203,9 @@ add_action( 'template_redirect', 'bgc_start_output_buffer' );
  *
  * @since 1.0.5
  * @since 1.0.6 Añadida lógica para ajustar headers sticky/fixed del tema.
+ * @since 1.0.7 Comportamiento auto-hide: la barra se oculta al hacer scroll down
+ *               y reaparece al hacer scroll up. Re-ajusta los headers sticky del
+ *               tema entre top:56px (barra visible) y top:0 (barra oculta).
  * @return void
  */
 function bgc_topbar_js_fallback() {
@@ -224,43 +227,42 @@ function bgc_topbar_js_fallback() {
     <script id="govco-topbar-fallback">
     (function(){
         var GOVCO_BAR_HEIGHT = 56;
+        var SCROLL_THRESHOLD = 8;
+        var topbarState = 'visible';
+        var lastScrollY = 0;
+        var scrollTicking = false;
+        var savedBodyPaddingTop = null;
+        var savedHtmlScrollPaddingTop = null;
 
-        function injectGovcoTopBar(){
-            var existing = document.getElementById('govco-header-topbar');
-            if (existing) {
-                // La barra ya existe. Reforzamos posicionamiento por si el
-                // tema la está ocultando con CSS de mayor especificidad.
-                existing.style.setProperty('position', 'fixed', 'important');
-                existing.style.setProperty('top', '0', 'important');
-                existing.style.setProperty('left', '0', 'important');
-                existing.style.setProperty('right', '0', 'important');
-                existing.style.setProperty('z-index', '2147483647', 'important');
-            } else {
-                // Crear la barra dinámicamente con estilos inline forzados.
-                var wrapper = document.createElement('div');
-                wrapper.innerHTML = '<div id="govco-header-topbar" style="background-color:#0943B5 !important;height:56px !important;width:100% !important;display:flex !important;align-items:center !important;padding:0 16px !important;box-sizing:border-box !important;z-index:2147483647 !important;position:fixed !important;top:0 !important;left:0 !important;right:0 !important;margin:0 !important;border:none !important;float:none !important;"><div style="max-width:1200px !important;width:100% !important;margin:0 auto !important;display:flex !important;align-items:center !important;justify-content:flex-start !important;height:100% !important;border:none !important;padding:0 !important;"><a href="https://www.gov.co/" target="_blank" rel="noopener noreferrer" style="display:flex !important;align-items:center !important;min-width:44px !important;min-height:44px !important;justify-content:center !important;text-decoration:none !important;border:none !important;padding:0 !important;margin:0 !important;background:none !important;box-shadow:none !important;" aria-label="Portal Único del Estado Colombiano - GOV.CO"><img src="<?php echo $logo_url; ?>" alt="Logo GOV.CO" style="width:136px !important;height:24px !important;display:block !important;border:none !important;padding:0 !important;margin:0 !important;box-shadow:none !important;object-fit:contain !important;"></a></div></div>';
-
-                var bar = wrapper.firstElementChild;
-                if (bar && document.body) {
-                    document.body.insertBefore(bar, document.body.firstChild);
-                }
+        function ensureBar(){
+            var bar = document.getElementById('govco-header-topbar');
+            if (bar) {
+                bar.style.setProperty('position', 'fixed', 'important');
+                bar.style.setProperty('top', '0', 'important');
+                bar.style.setProperty('left', '0', 'important');
+                bar.style.setProperty('right', '0', 'important');
+                bar.style.setProperty('z-index', '2147483647', 'important');
+                bar.style.setProperty('will-change', 'transform', 'important');
+                bar.style.setProperty('transition', 'transform 250ms ease-in-out', 'important');
+                bar.style.setProperty('transform', 'translateY(0)', 'important');
+                return bar;
             }
 
-            // Padding-top del body para evitar contenido bajo la barra.
-            var currentPadding = parseInt(window.getComputedStyle(document.body).paddingTop, 10) || 0;
-            if (currentPadding < GOVCO_BAR_HEIGHT) {
-                document.body.style.paddingTop = GOVCO_BAR_HEIGHT + 'px';
-            }
-            document.documentElement.style.scrollPaddingTop = GOVCO_BAR_HEIGHT + 'px';
+            var wrapper = document.createElement('div');
+            wrapper.innerHTML = '<div id="govco-header-topbar" style="background-color:#0943B5 !important;height:56px !important;width:100% !important;display:flex !important;align-items:center !important;padding:0 16px !important;box-sizing:border-box !important;z-index:2147483647 !important;position:fixed !important;top:0 !important;left:0 !important;right:0 !important;margin:0 !important;border:none !important;float:none !important;will-change:transform !important;transition:transform 250ms ease-in-out !important;transform:translateY(0) !important;"><div style="max-width:1200px !important;width:100% !important;margin:0 auto !important;display:flex !important;align-items:center !important;justify-content:flex-start !important;height:100% !important;border:none !important;padding:0 !important;"><a href="https://www.gov.co/" target="_blank" rel="noopener noreferrer" style="display:flex !important;align-items:center !important;min-width:44px !important;min-height:44px !important;justify-content:center !important;text-decoration:none !important;border:none !important;padding:0 !important;margin:0 !important;background:none !important;box-shadow:none !important;" aria-label="Portal Único del Estado Colombiano - GOV.CO"><img src="<?php echo $logo_url; ?>" alt="Logo GOV.CO" style="width:136px !important;height:24px !important;display:block !important;border:none !important;padding:0 !important;margin:0 !important;box-shadow:none !important;object-fit:contain !important;"></a></div></div>';
 
-            adjustStickyHeaders();
+            var created = wrapper.firstElementChild;
+            if (created && document.body) {
+                document.body.insertBefore(created, document.body.firstChild);
+            }
+            return created;
         }
 
         /**
          * Detecta headers/menus del tema con position: fixed o sticky y
-         * les aplica top: 56px para que se peguen debajo de la barra GOV.CO.
+         * les aplica el top indicado (56px si la barra esta visible, 0 si esta oculta).
          */
-        function adjustStickyHeaders(){
+        function adjustStickyHeaders(targetTop){
             try {
                 var selectors = [
                     'header',
@@ -284,7 +286,6 @@ function bgc_topbar_js_fallback() {
                 var elements = document.querySelectorAll(selectors);
                 for (var i = 0; i < elements.length; i++) {
                     var el = elements[i];
-                    // Saltar la propia barra GOV.CO y sus hijos.
                     if (el.id === 'govco-header-topbar') { continue; }
                     if (el.closest && el.closest('#govco-header-topbar')) { continue; }
 
@@ -292,33 +293,111 @@ function bgc_topbar_js_fallback() {
                     var position = style.position;
                     if (position !== 'fixed' && position !== 'sticky') { continue; }
 
-                    var currentTop = parseFloat(style.top);
-                    if (!currentTop || currentTop < GOVCO_BAR_HEIGHT) {
-                        el.style.setProperty('top', GOVCO_BAR_HEIGHT + 'px', 'important');
-                    }
+                    el.style.setProperty('top', targetTop + 'px', 'important');
                 }
             } catch (e) {
                 /* Silenciar errores para no afectar otras funciones. */
             }
         }
 
-        function runAll(){
-            injectGovcoTopBar();
+        function applyBodyPadding(visible){
+            if (visible) {
+                document.body.style.paddingTop = GOVCO_BAR_HEIGHT + 'px';
+                document.documentElement.style.scrollPaddingTop = GOVCO_BAR_HEIGHT + 'px';
+            } else {
+                if (savedBodyPaddingTop === null) {
+                    savedBodyPaddingTop = document.body.style.paddingTop || '';
+                }
+                if (savedHtmlScrollPaddingTop === null) {
+                    savedHtmlScrollPaddingTop = document.documentElement.style.scrollPaddingTop || '';
+                }
+                document.body.style.paddingTop = '0px';
+                document.documentElement.style.scrollPaddingTop = '0px';
+            }
+        }
+
+        function showTopbar(){
+            if (topbarState === 'visible') { return; }
+            topbarState = 'visible';
+            var bar = document.getElementById('govco-header-topbar');
+            if (bar) {
+                bar.style.setProperty('transform', 'translateY(0)', 'important');
+            }
+            applyBodyPadding(true);
+            adjustStickyHeaders(GOVCO_BAR_HEIGHT);
+        }
+
+        function hideTopbar(){
+            if (topbarState === 'hidden') { return; }
+            topbarState = 'hidden';
+            var bar = document.getElementById('govco-header-topbar');
+            if (bar) {
+                bar.style.setProperty('transform', 'translateY(-100%)', 'important');
+            }
+            applyBodyPadding(false);
+            adjustStickyHeaders(0);
+        }
+
+        function handleScroll(){
+            var currentScrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
+
+            if (currentScrollY <= GOVCO_BAR_HEIGHT) {
+                showTopbar();
+                lastScrollY = currentScrollY;
+                return;
+            }
+
+            var diff = currentScrollY - lastScrollY;
+            if (diff > SCROLL_THRESHOLD) {
+                hideTopbar();
+                lastScrollY = currentScrollY;
+            } else if (diff < -SCROLL_THRESHOLD) {
+                showTopbar();
+                lastScrollY = currentScrollY;
+            }
+        }
+
+        function onScroll(){
+            if (!scrollTicking) {
+                window.requestAnimationFrame(function(){
+                    handleScroll();
+                    scrollTicking = false;
+                });
+                scrollTicking = true;
+            }
+        }
+
+        function init(){
+            ensureBar();
+            applyBodyPadding(true);
+            adjustStickyHeaders(GOVCO_BAR_HEIGHT);
+
+            window.addEventListener('scroll', onScroll, { passive: true });
+
+            lastScrollY = window.pageYOffset || document.documentElement.scrollTop || 0;
+            if (lastScrollY > GOVCO_BAR_HEIGHT) {
+                hideTopbar();
+            }
         }
 
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', runAll);
+            document.addEventListener('DOMContentLoaded', init);
         } else {
-            runAll();
+            init();
         }
 
         // Re-aplicar en eventos clave para capturar headers inicializados tarde
         // (BeTheme, Elementor, Muffin Builder suelen añadir clases tras load).
-        window.addEventListener('load', runAll);
-        setTimeout(runAll, 100);
-        setTimeout(runAll, 500);
-        setTimeout(runAll, 1500);
-        setTimeout(runAll, 3000);
+        function reapply(){
+            ensureBar();
+            adjustStickyHeaders(topbarState === 'visible' ? GOVCO_BAR_HEIGHT : 0);
+        }
+
+        window.addEventListener('load', reapply);
+        setTimeout(reapply, 100);
+        setTimeout(reapply, 500);
+        setTimeout(reapply, 1500);
+        setTimeout(reapply, 3000);
     })();
     </script>
     <?php
