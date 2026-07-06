@@ -3,7 +3,7 @@
  * Plugin Name:       Barra GOV.CO
  * Plugin URI:        https://www.gov.co/
  * Description:       Integra la barra superior y la barra azul inferior oficiales de GOV.CO (Kit UI 9.2) en cualquier sitio WordPress, cumpliendo con los lineamientos de identidad visual del Estado Colombiano.
- * Version:           1.0.5
+ * Version:           1.0.6
  * Requires at least: 5.6
  * Requires PHP:      7.2
  * Author:            Valor Mas S.A.S
@@ -31,7 +31,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * -----------------------------------------------------------------------------
  */
 if ( ! defined( 'BARRA_GOVCO_VERSION' ) ) {
-    define( 'BARRA_GOVCO_VERSION', '1.0.5' );
+    define( 'BARRA_GOVCO_VERSION', '1.0.6' );
 }
 if ( ! defined( 'BARRA_GOVCO_PLUGIN_FILE' ) ) {
     define( 'BARRA_GOVCO_PLUGIN_FILE', __FILE__ );
@@ -202,6 +202,7 @@ add_action( 'template_redirect', 'bgc_start_output_buffer' );
  * Se ejecuta en wp_footer con prioridad 1 (antes que la mayoría de scripts).
  *
  * @since 1.0.5
+ * @since 1.0.6 Añadida lógica para ajustar headers sticky/fixed del tema.
  * @return void
  */
 function bgc_topbar_js_fallback() {
@@ -222,6 +223,8 @@ function bgc_topbar_js_fallback() {
     ?>
     <script id="govco-topbar-fallback">
     (function(){
+        var GOVCO_BAR_HEIGHT = 56;
+
         function injectGovcoTopBar(){
             var existing = document.getElementById('govco-header-topbar');
             if (existing) {
@@ -232,39 +235,90 @@ function bgc_topbar_js_fallback() {
                 existing.style.setProperty('left', '0', 'important');
                 existing.style.setProperty('right', '0', 'important');
                 existing.style.setProperty('z-index', '2147483647', 'important');
-                return;
-            }
+            } else {
+                // Crear la barra dinámicamente con estilos inline forzados.
+                var wrapper = document.createElement('div');
+                wrapper.innerHTML = '<div id="govco-header-topbar" style="background-color:#0943B5 !important;height:56px !important;width:100% !important;display:flex !important;align-items:center !important;padding:0 16px !important;box-sizing:border-box !important;z-index:2147483647 !important;position:fixed !important;top:0 !important;left:0 !important;right:0 !important;margin:0 !important;border:none !important;float:none !important;"><div style="max-width:1200px !important;width:100% !important;margin:0 auto !important;display:flex !important;align-items:center !important;justify-content:flex-start !important;height:100% !important;border:none !important;padding:0 !important;"><a href="https://www.gov.co/" target="_blank" rel="noopener noreferrer" style="display:flex !important;align-items:center !important;min-width:44px !important;min-height:44px !important;justify-content:center !important;text-decoration:none !important;border:none !important;padding:0 !important;margin:0 !important;background:none !important;box-shadow:none !important;" aria-label="Portal Único del Estado Colombiano - GOV.CO"><img src="<?php echo $logo_url; ?>" alt="Logo GOV.CO" style="width:136px !important;height:24px !important;display:block !important;border:none !important;padding:0 !important;margin:0 !important;box-shadow:none !important;object-fit:contain !important;"></a></div></div>';
 
-            // Crear la barra dinámicamente con estilos inline forzados.
-            var wrapper = document.createElement('div');
-            wrapper.innerHTML = '<div id="govco-header-topbar" style="background-color:#0943B5 !important;height:56px !important;width:100% !important;display:flex !important;align-items:center !important;padding:0 16px !important;box-sizing:border-box !important;z-index:2147483647 !important;position:fixed !important;top:0 !important;left:0 !important;right:0 !important;margin:0 !important;border:none !important;float:none !important;"><div style="max-width:1200px !important;width:100% !important;margin:0 auto !important;display:flex !important;align-items:center !important;justify-content:flex-start !important;height:100% !important;border:none !important;padding:0 !important;"><a href="https://www.gov.co/" target="_blank" rel="noopener noreferrer" style="display:flex !important;align-items:center !important;min-width:44px !important;min-height:44px !important;justify-content:center !important;text-decoration:none !important;border:none !important;padding:0 !important;margin:0 !important;background:none !important;box-shadow:none !important;" aria-label="Portal Único del Estado Colombiano - GOV.CO"><img src="<?php echo $logo_url; ?>" alt="Logo GOV.CO" style="width:136px !important;height:24px !important;display:block !important;border:none !important;padding:0 !important;margin:0 !important;box-shadow:none !important;object-fit:contain !important;"></a></div></div>';
-
-            var bar = wrapper.firstElementChild;
-            if (!bar) { return; }
-
-            // Insertar como primer hijo del body para que quede en la cima.
-            if (document.body) {
-                if (document.body.firstChild) {
+                var bar = wrapper.firstElementChild;
+                if (bar && document.body) {
                     document.body.insertBefore(bar, document.body.firstChild);
-                } else {
-                    document.body.appendChild(bar);
                 }
-
-                // Añadir padding-top para que el header del tema no quede
-                // oculto bajo la barra fija. Solo si no hay ya padding suficiente.
-                var currentPadding = parseInt(window.getComputedStyle(document.body).paddingTop, 10) || 0;
-                if (currentPadding < 56) {
-                    document.body.style.paddingTop = '56px';
-                }
-                document.documentElement.style.scrollPaddingTop = '56px';
             }
+
+            // Padding-top del body para evitar contenido bajo la barra.
+            var currentPadding = parseInt(window.getComputedStyle(document.body).paddingTop, 10) || 0;
+            if (currentPadding < GOVCO_BAR_HEIGHT) {
+                document.body.style.paddingTop = GOVCO_BAR_HEIGHT + 'px';
+            }
+            document.documentElement.style.scrollPaddingTop = GOVCO_BAR_HEIGHT + 'px';
+
+            adjustStickyHeaders();
+        }
+
+        /**
+         * Detecta headers/menus del tema con position: fixed o sticky y
+         * les aplica top: 56px para que se peguen debajo de la barra GOV.CO.
+         */
+        function adjustStickyHeaders(){
+            try {
+                var selectors = [
+                    'header',
+                    '.header',
+                    '.site-header',
+                    '.site-navigation',
+                    '#masthead',
+                    '.elementor-location-header',
+                    '.elementor-sticky',
+                    '.is-sticky',
+                    '.sticky-header',
+                    '[data-sticky="true"]',
+                    '[class*="sticky"]',
+                    '[class*="fixed-header"]',
+                    '.mfn-header-tmpl',
+                    '.mfn-header',
+                    '#Header_wrapper',
+                    '.tf_sticky'
+                ].join(',');
+
+                var elements = document.querySelectorAll(selectors);
+                for (var i = 0; i < elements.length; i++) {
+                    var el = elements[i];
+                    // Saltar la propia barra GOV.CO y sus hijos.
+                    if (el.id === 'govco-header-topbar') { continue; }
+                    if (el.closest && el.closest('#govco-header-topbar')) { continue; }
+
+                    var style = window.getComputedStyle(el);
+                    var position = style.position;
+                    if (position !== 'fixed' && position !== 'sticky') { continue; }
+
+                    var currentTop = parseFloat(style.top);
+                    if (!currentTop || currentTop < GOVCO_BAR_HEIGHT) {
+                        el.style.setProperty('top', GOVCO_BAR_HEIGHT + 'px', 'important');
+                    }
+                }
+            } catch (e) {
+                /* Silenciar errores para no afectar otras funciones. */
+            }
+        }
+
+        function runAll(){
+            injectGovcoTopBar();
         }
 
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', injectGovcoTopBar);
+            document.addEventListener('DOMContentLoaded', runAll);
         } else {
-            injectGovcoTopBar();
+            runAll();
         }
+
+        // Re-aplicar en eventos clave para capturar headers inicializados tarde
+        // (BeTheme, Elementor, Muffin Builder suelen añadir clases tras load).
+        window.addEventListener('load', runAll);
+        setTimeout(runAll, 100);
+        setTimeout(runAll, 500);
+        setTimeout(runAll, 1500);
+        setTimeout(runAll, 3000);
     })();
     </script>
     <?php

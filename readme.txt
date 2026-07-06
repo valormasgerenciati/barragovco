@@ -4,7 +4,7 @@ Tags: gov.co, colombia, government, branding, accessibility
 Requires at least: 5.6
 Tested up to: 6.5
 Requires PHP: 7.2
-Stable tag: 1.0.5
+Stable tag: 1.0.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -56,6 +56,11 @@ El plugin incluye un fallback que registra la barra superior también en `wp_foo
 Los estilos y scripts se cargan desde el CDN oficial `cdn.www.gov.co`. Los logotipos se sirven localmente desde el propio plugin.
 
 == Changelog ==
+
+= 1.0.6 =
+* Compatibilidad con headers sticky/fixed del tema: el fallback JavaScript ahora detecta elementos con `position: fixed` o `position: sticky` (selectores comunes: `header`, `.site-header`, `.elementor-sticky`, `.mfn-header-tmpl`, `[class*="sticky"]`, etc.) y les aplica `top: 56px` con `!important`. Así, la barra GOV.CO queda fija arriba del viewport y el header sticky del tema se "engancha" justo debajo de ella, sin superponerse.
+* Se ejecuta el ajuste en varios eventos (`DOMContentLoaded`, `window.load`, y `setTimeout` a 100/500/1500/3000 ms) y con selectores amplios para capturar headers que los builders (Elementor, Muffin Builder, BeTheme) inicializan de forma asíncrona.
+* Saltos explícitos para `#govco-header-topbar` y sus descendientes, evitando que la propia barra GOV.CO se modifique a sí misma.
 
 = 1.0.5 =
 * Visibilidad reforzada: se añade fallback JavaScript en `wp_footer` prioridad 1. Si `wp_body_open` o el output buffering no logran inyectar la barra (temas exóticos, plugins de caché, CSS de tema con mayor especificidad), el JS la crea dinámicamente con `position: fixed` + `z-index: 2147483647` y la inserta como primer hijo del `<body>`.
