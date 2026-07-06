@@ -4,7 +4,7 @@ Tags: gov.co, colombia, government, branding, accessibility
 Requires at least: 5.6
 Tested up to: 6.5
 Requires PHP: 7.2
-Stable tag: 1.0.7
+Stable tag: 1.0.8
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -56,6 +56,12 @@ El plugin incluye un fallback que registra la barra superior también en `wp_foo
 Los estilos y scripts se cargan desde el CDN oficial `cdn.www.gov.co`. Los logotipos se sirven localmente desde el propio plugin.
 
 == Changelog ==
+
+= 1.0.8 =
+* Se elimina completamente el efecto "auto-hide" introducido en 1.0.7. La barra superior vuelve a su comportamiento natural: `position: fixed; top: 0`, siempre visible, sin transiciones, sin transformaciones, sin listeners de scroll, sin cambios de padding.
+* Se retiran del JS las propiedades `will-change`, `transition`, `transform: translateY(-100%/0)`, así como las funciones `showTopbar`, `hideTopbar`, `handleScroll`, `onScroll`, `applyBodyPadding` y el estado interno `topbarState`.
+* El `padding-top` del `<body>` y el `scroll-padding-top` del `<html>` se fijan siempre a 56px (sin swap a 0 al ocultar) y los headers sticky del tema se mantienen con `top: 56px` constante.
+* Resultado: barra GOV.CO 100% fija y plana, idéntica al comportamiento del sitio oficial gov.co.
 
 = 1.0.7 =
 * Comportamiento "auto-hide" de la barra superior: ahora se oculta al hacer scroll hacia abajo y reaparece al hacer scroll hacia arriba. Esto libera todo el alto del viewport para leer el contenido y se alinea con el patrón habitual de barras gubernamentales inteligentes.
