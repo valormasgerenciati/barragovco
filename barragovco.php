@@ -3,7 +3,7 @@
  * Plugin Name:       Barra GOV.CO
  * Plugin URI:        https://www.gov.co/
  * Description:       Integra la barra superior y la barra azul inferior oficiales de GOV.CO (Kit UI 9.2) en cualquier sitio WordPress, cumpliendo con los lineamientos de identidad visual del Estado Colombiano.
- * Version:           1.0.3
+ * Version:           1.0.4
  * Requires at least: 5.6
  * Requires PHP:      7.2
  * Author:            Valor Mas S.A.S
@@ -31,7 +31,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * -----------------------------------------------------------------------------
  */
 if ( ! defined( 'BARRA_GOVCO_VERSION' ) ) {
-    define( 'BARRA_GOVCO_VERSION', '1.0.3' );
+    define( 'BARRA_GOVCO_VERSION', '1.0.4' );
 }
 if ( ! defined( 'BARRA_GOVCO_PLUGIN_FILE' ) ) {
     define( 'BARRA_GOVCO_PLUGIN_FILE', __FILE__ );
@@ -84,14 +84,22 @@ add_action( 'wp_enqueue_scripts', 'bgc_enqueue_assets' );
 function bgc_get_top_bar_html() {
     $logo_url = esc_url( BARRA_GOVCO_PLUGIN_URL . 'logos/logoGovCO.png' );
 
+    // Estilos inline. position:fixed + z-index máximo asegura que la barra
+    // queda por encima de cualquier header fijo/sticky del tema.
+    // Se añade body.govco-has-topbar { padding-top: 56px } vía JS para evitar
+    // que el header del tema quede oculto bajo la barra fija.
     $html  = '<!-- Barra Superior GOV.CO - Lineamientos Oficiales Kit UI 9.2 -->';
-    $html .= '<div id="govco-header-topbar" style="background-color: #0943B5 !important; height: 56px !important; width: 100% !important; display: flex !important; align-items: center !important; padding: 0 16px !important; box-sizing: border-box !important; z-index: 99999 !important; position: relative !important; margin: 0 !important; border: none !important; float: none !important;">';
+    $html .= '<div id="govco-header-topbar" style="background-color: #0943B5 !important; height: 56px !important; width: 100% !important; display: flex !important; align-items: center !important; padding: 0 16px !important; box-sizing: border-box !important; z-index: 2147483647 !important; position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; margin: 0 !important; border: none !important; float: none !important;">';
     $html .= '<div style="max-width: 1200px !important; width: 100% !important; margin: 0 auto !important; display: flex !important; align-items: center !important; justify-content: flex-start !important; height: 100% !important; border: none !important; padding: 0 !important;">';
     $html .= '<a href="https://www.gov.co/" target="_blank" rel="noopener noreferrer" style="display: flex !important; align-items: center !important; min-width: 44px !important; min-height: 44px !important; justify-content: center !important; text-decoration: none !important; border: none !important; padding: 0 !important; margin: 0 !important; background: none !important; box-shadow: none !important;" aria-label="Portal Único del Estado Colombiano - GOV.CO">';
     $html .= '<img src="' . $logo_url . '" alt="Logo GOV.CO" style="width: 136px !important; height: 24px !important; max-width: 136px !important; max-height: 24px !important; min-width: 136px !important; min-height: 24px !important; display: block !important; border: none !important; padding: 0 !important; margin: 0 !important; box-shadow: none !important; object-fit: contain !important; aspect-ratio: 136 / 24 !important;">';
     $html .= '</a>';
     $html .= '</div>';
     $html .= '</div>';
+    // Empujamos el contenido del tema 56px hacia abajo para que no quede
+    // oculto bajo la barra fija. Se aplica solo si el body no tiene ya un
+    // padding-top que cubra la barra (detectado por la altura 56px).
+    $html .= '<style id="govco-topbar-style">body{padding-top:56px !important; box-sizing:border-box;}html{scroll-padding-top:56px;}</style>';
 
     return $html;
 }

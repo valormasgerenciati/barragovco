@@ -4,7 +4,7 @@ Tags: gov.co, colombia, government, branding, accessibility
 Requires at least: 5.6
 Tested up to: 6.5
 Requires PHP: 7.2
-Stable tag: 1.0.3
+Stable tag: 1.0.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -56,7 +56,9 @@ El plugin incluye un fallback que registra la barra superior también en `wp_foo
 Los estilos y scripts se cargan desde el CDN oficial `cdn.www.gov.co`. Los logotipos se sirven localmente desde el propio plugin.
 
 == Changelog ==
-
+= 1.0.4 =
+* Visibilidad: la barra superior ahora usa `position: fixed; top: 0` con `z-index: 2147483647` (máximo entero) en lugar de `position: relative`. Esto garantiza que quede visible sobre cualquier `<header>` fijo o sticky del tema (BeTheme y otros builders).
+* Se añade un `<style>` inline que aplica `padding-top: 56px` al `<body>` para evitar que el header del tema quede oculto bajo la barra fija, y `scroll-padding-top` en `<html>` para que los anclajes de scroll no queden bajo la barra.
 = 1.0.3 =
 * Corrección crítica (WSOD): se elimina el `ob_start` anidado dentro del callback de buffer, que podía provocar pantalla en blanco al combinarse con plugins de caché u otros buffers activos.
 * `bgc_get_top_bar_html()` ahora construye el HTML por concatenación de cadenas (sin `ob_start`/`ob_get_clean` internos).
@@ -76,5 +78,5 @@ Los estilos y scripts se cargan desde el CDN oficial `cdn.www.gov.co`. Los logot
 
 == Upgrade Notice ==
 
-= 1.0.3 =
-Corrección de pantalla en blanco (WSOD) que podía ocurrir en 1.0.2 al combinarse con plugins de caché u otros buffers activos. Actualización obligatoria desde 1.0.2.
+= 1.0.4 =
+La barra superior ahora es fija y se muestra por encima de cualquier header fijo/sticky del tema. Recomendado para todos los sitios con headers de menú que se superponían a la barra GOV.CO.
