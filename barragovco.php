@@ -3,7 +3,7 @@
  * Plugin Name:       Barra GOV.CO
  * Plugin URI:        https://www.gov.co/
  * Description:       Integra la barra superior y la barra azul inferior oficiales de GOV.CO (Kit UI 9.2) en cualquier sitio WordPress, cumpliendo con los lineamientos de identidad visual del Estado Colombiano.
- * Version:           1.0.1
+ * Version:           1.0.2
  * Requires at least: 5.6
  * Requires PHP:      7.2
  * Author:            Valor Mas S.A.S
@@ -31,7 +31,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * -----------------------------------------------------------------------------
  */
 if ( ! defined( 'BARRA_GOVCO_VERSION' ) ) {
-    define( 'BARRA_GOVCO_VERSION', '1.0.1' );
+    define( 'BARRA_GOVCO_VERSION', '1.0.2' );
 }
 if ( ! defined( 'BARRA_GOVCO_PLUGIN_FILE' ) ) {
     define( 'BARRA_GOVCO_PLUGIN_FILE', __FILE__ );
@@ -72,30 +72,19 @@ add_action( 'wp_enqueue_scripts', 'bgc_enqueue_assets' );
 
 
 /**
- * Marca interna para evitar que la barra superior se imprima dos veces
- * cuando el tema activo no implementa wp_body_open().
+ * Devuelve el HTML de la barra superior de GOV.CO como cadena.
  *
- * @since 1.0.0
- * @var bool
- */
-$bgc_top_bar_printed = false;
-
-/**
- * Renderiza la barra superior de GOV.CO al abrir el body.
+ * Se usa tanto para imprimirla vía wp_body_open como para inyectarla
+ * mediante output buffering en temas que no soportan ese hook
+ * (p. ej. BeTheme, Muffin Builder y otros themes con builders).
  *
- * @since 1.0.0
- * @return void
+ * @since 1.0.2
+ * @return string
  */
-function bgc_render_top_bar() {
-    global $bgc_top_bar_printed;
-
-    // Si ya se imprimió en wp_body_open, no volver a hacerlo en el fallback.
-    if ( $bgc_top_bar_printed ) {
-        return;
-    }
-    $bgc_top_bar_printed = true;
-
+function bgc_get_top_bar_html() {
     $logo_url = BARRA_GOVCO_PLUGIN_URL . 'logos/logoGovCO.png';
+
+    ob_start();
     ?>
     <!-- Barra Superior GOV.CO - Lineamientos Oficiales Kit UI 9.2 -->
     <div id="govco-header-topbar" style="background-color: #0943B5 !important; height: 56px !important; width: 100% !important; display: flex !important; align-items: center !important; padding: 0 16px !important; box-sizing: border-box !important; z-index: 99999 !important; position: relative !important; margin: 0 !important; border: none !important; float: none !important;">
@@ -112,11 +101,76 @@ function bgc_render_top_bar() {
         </div>
     </div>
     <?php
+    return (string) ob_get_clean();
+}
+
+/**
+ * Renderiza la barra superior cuando el tema invoca wp_body_open().
+ *
+ * @since 1.0.0
+ * @since 1.0.2 Refactorizado: delega en bgc_get_top_bar_html().
+ * @return void
+ */
+function bgc_render_top_bar() {
+    // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+    echo bgc_get_top_bar_html();
 }
 add_action( 'wp_body_open', 'bgc_render_top_bar', 1 );
 
-// Fallback para temas que no usan wp_body_open (compatibilidad amplia).
-add_action( 'wp_footer', 'bgc_render_top_bar', 999 );
+/**
+ * Inyecta la barra superior justo después de <body> mediante output buffering.
+ *
+ * Esta vía cubre temas que NO llaman wp_body_open() (BeTheme, builders
+ * personalizados, etc.) y evita el bug histórico que situaba la barra
+ * superior en el pie del documento, junto a la barra azul inferior.
+ *
+ * Si la barra ya fue impresa por wp_body_open(), se detecta por el
+ * atributo id y se omite para no duplicarla.
+ *
+ * @since 1.0.2
+ * @param string $buffer HTML completo de la página capturado por ob_start.
+ * @return string HTML con la barra superior inyectada (si corresponde).
+ */
+function bgc_inject_top_bar_into_body( $buffer ) {
+    if ( empty( $buffer ) || false === strpos( $buffer, '<body' ) ) {
+        return $buffer;
+    }
+    // Si wp_body_open() ya inyectó la barra, no duplicar.
+    if ( false !== strpos( $buffer, 'id="govco-header-topbar"' ) ) {
+        return $buffer;
+    }
+    return preg_replace(
+        '/(<body[^>]*>)/i',
+        '$1' . bgc_get_top_bar_html(),
+        $buffer,
+        1
+    );
+}
+
+/**
+ * Activa el buffer de salida en el front-end para inyectar la barra superior.
+ *
+ * Se excluyen admin, AJAX, REST y feeds para no afectar otras respuestas.
+ *
+ * @since 1.0.2
+ * @return void
+ */
+function bgc_start_output_buffer() {
+    if ( is_admin() ) {
+        return;
+    }
+    if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
+        return;
+    }
+    if ( defined( 'DOING_CRON' ) && DOING_CRON ) {
+        return;
+    }
+    if ( ( defined( 'REST_REQUEST' ) && REST_REQUEST ) || ( defined( 'WP_CLI' ) && WP_CLI ) ) {
+        return;
+    }
+    ob_start( 'bgc_inject_top_bar_into_body' );
+}
+add_action( 'template_redirect', 'bgc_start_output_buffer' );
 
 
 /**

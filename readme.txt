@@ -4,7 +4,7 @@ Tags: gov.co, colombia, government, branding, accessibility
 Requires at least: 5.6
 Tested up to: 6.5
 Requires PHP: 7.2
-Stable tag: 1.0.0
+Stable tag: 1.0.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -57,10 +57,18 @@ Los estilos y scripts se cargan desde el CDN oficial `cdn.www.gov.co`. Los logot
 
 == Changelog ==
 
+= 1.0.2 =
+* Corrección: la barra superior ya no se renderiza al pie del documento en temas que no implementan `wp_body_open()` (BeTheme, Muffin Builder, themes con builders personalizados). Se sustituye el fallback basado en `wp_footer` por inyección vía `output buffering` en `template_redirect`, con detección de duplicados.
+* Refactor: se extrae `bgc_get_top_bar_html()` para reutilizar el marcado entre `wp_body_open` y el buffer.
+* Exclusiones añadidas en el buffer: admin, AJAX, cron, REST y WP-CLI.
+
+= 1.0.1 =
+* Ajustes menores de marcado y robustez en la barra superior.
+
 = 1.0.0 =
 * Versión inicial. Barra superior, barra azul inferior, y carga de assets oficiales de GOV.CO v5.
 
 == Upgrade Notice ==
 
-= 1.0.0 =
-Primera versión estable.
+= 1.0.2 =
+Corrige el bug que situaba la barra superior en la parte inferior de la página en temas como BeTheme. Recomendado para todos los sitios con builders que no usan `wp_body_open()`.
