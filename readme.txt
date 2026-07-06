@@ -4,7 +4,7 @@ Tags: gov.co, colombia, government, branding, accessibility
 Requires at least: 5.6
 Tested up to: 6.5
 Requires PHP: 7.2
-Stable tag: 1.0.8
+Stable tag: 1.0.9
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -56,6 +56,13 @@ El plugin incluye un fallback que registra la barra superior también en `wp_foo
 Los estilos y scripts se cargan desde el CDN oficial `cdn.www.gov.co`. Los logotipos se sirven localmente desde el propio plugin.
 
 == Changelog ==
+
+= 1.0.9 =
+* Se elimina por completo cualquier efecto sticky/fixed de la barra superior. La barra ahora es un bloque normal del documento (sin `position: fixed`, sin `z-index`, sin `top/left/right`), insertada como primer hijo del `<body>`.
+* Al hacer scroll, la barra se va con la pagina y desaparece del viewport, en lugar de quedarse pegada arriba.
+* Se retiran del render PHP (`bgc_get_top_bar_html()`) los estilos `position: fixed !important; top: 0; left: 0; right: 0;` y `z-index: 2147483647`, ademas del `<style id="govco-topbar-style">` que aplicaba `body { padding-top: 56px }` y `html { scroll-padding-top: 56px }`.
+* Se retiran del fallback JS las funciones `adjustStickyHeaders()`, los re-ajustes de headers del tema, los listeners de scroll y la inyeccion de `padding-top` en `<body>`/`<html>`.
+* Resultado: la barra GOV.CO ocupa sus 56px arriba del contenido y se la lleva el scroll como cualquier elemento mas de la pagina.
 
 = 1.0.8 =
 * Se elimina completamente el efecto "auto-hide" introducido en 1.0.7. La barra superior vuelve a su comportamiento natural: `position: fixed; top: 0`, siempre visible, sin transiciones, sin transformaciones, sin listeners de scroll, sin cambios de padding.
