@@ -4,7 +4,7 @@ Tags: gov.co, colombia, government, branding, accessibility
 Requires at least: 5.6
 Tested up to: 6.5
 Requires PHP: 7.2
-Stable tag: 1.0.4
+Stable tag: 1.0.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -56,6 +56,12 @@ El plugin incluye un fallback que registra la barra superior también en `wp_foo
 Los estilos y scripts se cargan desde el CDN oficial `cdn.www.gov.co`. Los logotipos se sirven localmente desde el propio plugin.
 
 == Changelog ==
+
+= 1.0.5 =
+* Visibilidad reforzada: se añade fallback JavaScript en `wp_footer` prioridad 1. Si `wp_body_open` o el output buffering no logran inyectar la barra (temas exóticos, plugins de caché, CSS de tema con mayor especificidad), el JS la crea dinámicamente con `position: fixed` + `z-index: 2147483647` y la inserta como primer hijo del `<body>`.
+* Se elimina el guard `ob_get_level() > 0` en `bgc_start_output_buffer()` que podía impedir el inicio del buffer cuando había otro buffer activo de un plugin de caché. La barra vuelve a inyectarse vía buffer en todos los casos.
+* El fallback JS también refuerza la posición fija y el z-index si la barra PHP ya está en el DOM pero el tema la está ocultando.
+
 = 1.0.4 =
 * Visibilidad: la barra superior ahora usa `position: fixed; top: 0` con `z-index: 2147483647` (máximo entero) en lugar de `position: relative`. Esto garantiza que quede visible sobre cualquier `<header>` fijo o sticky del tema (BeTheme y otros builders).
 * Se añade un `<style>` inline que aplica `padding-top: 56px` al `<body>` para evitar que el header del tema quede oculto bajo la barra fija, y `scroll-padding-top` en `<html>` para que los anclajes de scroll no queden bajo la barra.
@@ -78,5 +84,5 @@ Los estilos y scripts se cargan desde el CDN oficial `cdn.www.gov.co`. Los logot
 
 == Upgrade Notice ==
 
-= 1.0.4 =
-La barra superior ahora es fija y se muestra por encima de cualquier header fijo/sticky del tema. Recomendado para todos los sitios con headers de menú que se superponían a la barra GOV.CO.
+= 1.0.5 =
+Añade fallback en JavaScript para garantizar que la barra superior se muestre incluso cuando los mecanismos PHP (wp_body_open, output buffering) no la inyectan o el tema la oculta con CSS. Recomendado para entornos con plugins de caché activos o temas con headers especialmente conflictivos.

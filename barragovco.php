@@ -3,7 +3,7 @@
  * Plugin Name:       Barra GOV.CO
  * Plugin URI:        https://www.gov.co/
  * Description:       Integra la barra superior y la barra azul inferior oficiales de GOV.CO (Kit UI 9.2) en cualquier sitio WordPress, cumpliendo con los lineamientos de identidad visual del Estado Colombiano.
- * Version:           1.0.4
+ * Version:           1.0.5
  * Requires at least: 5.6
  * Requires PHP:      7.2
  * Author:            Valor Mas S.A.S
@@ -31,7 +31,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * -----------------------------------------------------------------------------
  */
 if ( ! defined( 'BARRA_GOVCO_VERSION' ) ) {
-    define( 'BARRA_GOVCO_VERSION', '1.0.4' );
+    define( 'BARRA_GOVCO_VERSION', '1.0.5' );
 }
 if ( ! defined( 'BARRA_GOVCO_PLUGIN_FILE' ) ) {
     define( 'BARRA_GOVCO_PLUGIN_FILE', __FILE__ );
@@ -184,18 +184,92 @@ function bgc_start_output_buffer() {
     if ( headers_sent() ) {
         return;
     }
-    // Si ya hay un buffer activo (p. ej. de un plugin de caché), no añadimos
-    // otro para evitar problemas de anidamiento. La barra aún se inyectará
-    // vía wp_body_open() cuando el tema lo soporte.
-    if ( ob_get_level() > 0 ) {
-        return;
-    }
 
     ob_start( 'bgc_inject_top_bar_into_body' );
 }
 
 add_action( 'wp_body_open', 'bgc_render_top_bar', 1 );
 add_action( 'template_redirect', 'bgc_start_output_buffer' );
+
+/**
+ * Fallback en JavaScript para inyectar la barra superior en el frontend.
+ *
+ * Capa de seguridad #3: si wp_body_open() y el output buffering no lograron
+ * inyectar la barra (por temas exóticos, plugins de caché que alteran buffers,
+ * o reglas CSS de tema que la ocultan), este script la crea dinámicamente
+ * y la posiciona con position:fixed + z-index máximo.
+ *
+ * Se ejecuta en wp_footer con prioridad 1 (antes que la mayoría de scripts).
+ *
+ * @since 1.0.5
+ * @return void
+ */
+function bgc_topbar_js_fallback() {
+    if ( is_admin() ) {
+        return;
+    }
+    if ( defined( 'DOING_AJAX' ) && DOING_AJAX ) {
+        return;
+    }
+    if ( defined( 'DOING_CRON' ) && DOING_CRON ) {
+        return;
+    }
+    if ( defined( 'REST_REQUEST' ) && REST_REQUEST ) {
+        return;
+    }
+
+    $logo_url = esc_url( BARRA_GOVCO_PLUGIN_URL . 'logos/logoGovCO.png' );
+    ?>
+    <script id="govco-topbar-fallback">
+    (function(){
+        function injectGovcoTopBar(){
+            var existing = document.getElementById('govco-header-topbar');
+            if (existing) {
+                // La barra ya existe. Reforzamos posicionamiento por si el
+                // tema la está ocultando con CSS de mayor especificidad.
+                existing.style.setProperty('position', 'fixed', 'important');
+                existing.style.setProperty('top', '0', 'important');
+                existing.style.setProperty('left', '0', 'important');
+                existing.style.setProperty('right', '0', 'important');
+                existing.style.setProperty('z-index', '2147483647', 'important');
+                return;
+            }
+
+            // Crear la barra dinámicamente con estilos inline forzados.
+            var wrapper = document.createElement('div');
+            wrapper.innerHTML = '<div id="govco-header-topbar" style="background-color:#0943B5 !important;height:56px !important;width:100% !important;display:flex !important;align-items:center !important;padding:0 16px !important;box-sizing:border-box !important;z-index:2147483647 !important;position:fixed !important;top:0 !important;left:0 !important;right:0 !important;margin:0 !important;border:none !important;float:none !important;"><div style="max-width:1200px !important;width:100% !important;margin:0 auto !important;display:flex !important;align-items:center !important;justify-content:flex-start !important;height:100% !important;border:none !important;padding:0 !important;"><a href="https://www.gov.co/" target="_blank" rel="noopener noreferrer" style="display:flex !important;align-items:center !important;min-width:44px !important;min-height:44px !important;justify-content:center !important;text-decoration:none !important;border:none !important;padding:0 !important;margin:0 !important;background:none !important;box-shadow:none !important;" aria-label="Portal Único del Estado Colombiano - GOV.CO"><img src="<?php echo $logo_url; ?>" alt="Logo GOV.CO" style="width:136px !important;height:24px !important;display:block !important;border:none !important;padding:0 !important;margin:0 !important;box-shadow:none !important;object-fit:contain !important;"></a></div></div>';
+
+            var bar = wrapper.firstElementChild;
+            if (!bar) { return; }
+
+            // Insertar como primer hijo del body para que quede en la cima.
+            if (document.body) {
+                if (document.body.firstChild) {
+                    document.body.insertBefore(bar, document.body.firstChild);
+                } else {
+                    document.body.appendChild(bar);
+                }
+
+                // Añadir padding-top para que el header del tema no quede
+                // oculto bajo la barra fija. Solo si no hay ya padding suficiente.
+                var currentPadding = parseInt(window.getComputedStyle(document.body).paddingTop, 10) || 0;
+                if (currentPadding < 56) {
+                    document.body.style.paddingTop = '56px';
+                }
+                document.documentElement.style.scrollPaddingTop = '56px';
+            }
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', injectGovcoTopBar);
+        } else {
+            injectGovcoTopBar();
+        }
+    })();
+    </script>
+    <?php
+}
+add_action( 'wp_footer', 'bgc_topbar_js_fallback', 1 );
 
 
 /**
